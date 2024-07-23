@@ -6,3 +6,6 @@ third_party/*
 package-lock.json
 yarn.lock
 *.pyc
+
+test_models/
+docs/*.pptx

@@ -1,36 +1,27 @@
-<div align="center">
-<img width="400px" height="100px" src="https://github.com/lutzroeder/netron/raw/main/.github/logo-light.svg#gh-light-mode-only">
-<img width="400px" height="100px" src="https://github.com/lutzroeder/netron/raw/main/.github/logo-dark.svg#gh-dark-mode-only">
-</div>
+[netron](https://github.com/lutzroeder/netron) is great. However, it struggles for models with a large number of nodes. Too much time is consumed for graph rendering, which causes the visualization to get stuck.
 
-Netron is a viewer for neural network, deep learning and machine learning models. 
+<center>
+ <img src="./docs/netron_stuck.png" style="zoom:60%;" />
+</center>
 
-Netron supports ONNX, TensorFlow Lite, Core ML, Keras, Caffe, Darknet, MXNet, PaddlePaddle, ncnn, MNN and TensorFlow.js.
+Then [netron-hierarchy](https://github.com/ZhangGe6/netron-hierarchy) comes to help. `netron-hierarchy` is based on the observation that deep learning models can be seen in a hierarchy view. More specifically:
 
-Netron has experimental support for PyTorch, TorchScript, TensorFlow, OpenVINO, RKNN, MediaPipe, ML.NET and scikit-learn.
+1. DL models are generally stacks of the same blocks. We can say, a DL model is composed of N blocks;
+2. Each block is composed of several high-level layers, like `Attention`, `LayerNorm`;
+3. ...
+4. In the most fine-grained view, each layer is composed of "atomic" modules, such as `Linear`, and `Add`.
 
-<p align='center'><a href='https://www.lutzroeder.com/ai'><img src='.github/screenshot.png' width='800'></a></p>
+The higher the hierarchy is, the coarser the node grainity is. We can view the model graph from an overview perspective, and most importantly, the number of nodes is reduced dramatically, relieving the stress of graph rendering.
 
-## Install
+This project is built based on [netron commit-id a064ed6](https://github.com/ZhangGe6/netron-hierarchy/commit/a064ed62b6df7150e35a96f9abc760b923e27ade) and is at its (very) early stage. Now only a Python prototype for ONNX is built as a model preprocessor before feeding to netron. These logics will be integrated into netron codebase for an out-of-box experience soon.
 
-**macOS**: [**Download**](https://github.com/lutzroeder/netron/releases/latest) the `.dmg` file or run `brew install --cask netron`
+To generate model with a specific hierarchy, we can run
+```bash
+cd prototype
 
-**Linux**: [**Download**](https://github.com/lutzroeder/netron/releases/latest) the `.AppImage` file or run `snap install netron`
+python hierarchy.py -i path/to/model -l hierarchy [-o path/to/save]
+```
 
-**Windows**: [**Download**](https://github.com/lutzroeder/netron/releases/latest) the `.exe` installer or run `winget install -s winget netron`
+Take the [LlamaV2_7B_float16.onnx](https://huggingface.co/alpindale/Llama-2-7b-ONNX/resolve/main/FP16/LlamaV2_7B_float16.onnx?download=true) as example, specify "hierarchy" as 3, we can get a model in a "block-wise" view. And specify "hierarchy" as 4, we can get a model in a "(high-level-)layer-wise" view.
 
-**Browser**: [**Start**](https://netron.app) the browser version.
-
-**Python Server**: Run `pip install netron` and `netron [FILE]` or `netron.start('[FILE]')`.
-
-## Models
-
-Sample model files to download or open using the browser version:
-
- * **ONNX**: [squeezenet](https://github.com/onnx/models/raw/main/validated/vision/classification/squeezenet/model/squeezenet1.0-3.onnx) [[open](https://netron.app?url=https://github.com/onnx/models/raw/main/validated/vision/classification/squeezenet/model/squeezenet1.0-3.onnx)]
- * **TensorFlow Lite**: [yamnet](https://huggingface.co/thelou1s/yamnet/resolve/main/lite-model_yamnet_tflite_1.tflite) [[open](https://netron.app?url=https://huggingface.co/thelou1s/yamnet/blob/main/lite-model_yamnet_tflite_1.tflite)]
- * **TensorFlow**: [chessbot](https://github.com/srom/chessbot/raw/master/model/chessbot.pb) [[open](https://netron.app?url=https://github.com/srom/chessbot/raw/master/model/chessbot.pb)]
- * **Keras**: [mobilenet](https://github.com/aio-libs/aiohttp-demos/raw/master/demos/imagetagger/tests/data/mobilenet.h5) [[open](https://netron.app?url=https://github.com/aio-libs/aiohttp-demos/raw/master/demos/imagetagger/tests/data/mobilenet.h5)]
- * **TorchScript**: [traced_online_pred_layer](https://github.com/ApolloAuto/apollo/raw/master/modules/prediction/data/traced_online_pred_layer.pt) [[open](https://netron.app?url=https://github.com/ApolloAuto/apollo/raw/master/modules/prediction/data/traced_online_pred_layer.pt)]
- * **Core ML**: [exermote](https://github.com/Lausbert/Exermote/raw/master/ExermoteInference/ExermoteCoreML/ExermoteCoreML/Model/Exermote.mlmodel) [[open](https://netron.app?url=https://github.com/Lausbert/Exermote/raw/master/ExermoteInference/ExermoteCoreML/ExermoteCoreML/Model/Exermote.mlmodel)]
- * **Darknet**: [yolo](https://github.com/AlexeyAB/darknet/raw/master/cfg/yolo.cfg) [[open](https://netron.app?url=https://github.com/AlexeyAB/darknet/raw/master/cfg/yolo.cfg)]
+<img src="./docs/prototype_demo.png" style="zoom:75%;" />
