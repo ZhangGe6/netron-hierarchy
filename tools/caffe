@@ -1,0 +1,37 @@
+#!/bin/bash
+
+set -e
+
+pushd $(cd $(dirname ${0})/..; pwd) > /dev/null
+
+clean() {
+    echo "caffe clean"
+    rm -rf "./third_party/source/caffe"
+}
+
+sync() {
+    echo "caffe sync"
+    mkdir -p "./third_party/source/caffe/src/caffe/proto"
+    curl --silent --location --output "./third_party/source/caffe/src/caffe/proto/caffe.proto" "https://github.com/BVLC/caffe/raw/master/src/caffe/proto/caffe.proto"
+}
+
+schema() {
+    echo "caffe schema"
+    [[ $(grep -U $'\x0D' ./source/caffe-proto.js) ]] && crlf=1
+    temp=$(mktemp -d)
+    node ./tools/caffe-script.js ./third_party/source/caffe/src/caffe/proto/caffe.proto ${temp}/caffe.proto
+    node ./tools/protoc.js --text --root caffe --out ./source/caffe-proto.js ${temp}/caffe.proto
+    rm -rf ${temp}
+    if [[ -n ${crlf} ]]; then
+        unix2dos --quiet --newfile ./source/caffe-proto.js ./source/caffe-proto.js
+    fi
+}
+
+while [ "$#" != 0 ]; do
+    command="$1" && shift
+    case "${command}" in
+        "clean") clean;;
+        "sync") sync;;
+        "schema") schema;;
+    esac
+done

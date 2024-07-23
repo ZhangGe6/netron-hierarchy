@@ -1,0 +1,72 @@
+[
+  {
+    "name": "BatchNormalization",
+    "category": "Normalization",
+    "attributes": [
+      { "name": "eps" },
+      { "name": "gamma" },
+      { "name": "decay" }
+    ]
+  },
+  {
+    "name": "Convolution",
+    "category": "Layer",
+    "attributes": [
+      { "name": "dilation" },
+      { "name": "kernelSize" },
+      { "name": "padding" }
+    ]
+  },
+  {
+    "name": "Dense",
+    "category": "Layer"
+  },
+  {
+    "name": "Dropout",
+    "category": "Dropout"
+  },
+  {
+    "name": "GlobalPooling",
+    "category": "Pool"
+  },
+  {
+    "name": "LReLU",
+    "category": "Activation"
+  },
+  {
+    "name": "Merge",
+    "category": "Tensor"
+  },
+  {
+    "name": "Output",
+    "category": "Layer"
+  },
+  {
+    "name": "ReLU",
+    "category": "Activation"
+  },
+  {
+    "name": "SeparableConvolution2D",
+    "category": "Layer"
+  },
+  {
+    "name": "Sigmoid",
+    "category": "Activation"
+  },
+  {
+    "name": "Softmax",
+    "category": "Activation"
+  },
+  {
+    "name": "Subsampling",
+    "category": "Layer"
+  },
+  {
+    "name": "TanH",
+    "category": "Activation"
+  },
+  {
+    "name": "Upsampling2D",
+    "category": "Layer"
+  }
+]
