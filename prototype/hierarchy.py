@@ -3,14 +3,12 @@ import argparse
 import re
 import logging
 import onnx
-from utils import (output2node,
-                   get_group_inputs,
-                   get_group_outputs,
-                   remove_input_constant)
+from utils import *
 
 logging.basicConfig(level=logging.INFO)
 LARGE_GRAPH_THRESH = 2000
 
+# TODO: handle nodes without "/" in names
 # match: /transformer/block_list.0/attention/Constant_205
 pattern = "([\w/]*[layerlist]*)\.([\d]*)(/[\w/]*)"
 
@@ -23,16 +21,9 @@ class hierarchyModel:
     self.gen_name2module_map()
 
   def analyse_graph(self):
-    '''get the following attributes for the given graph
-      - stack_node_patterns
-      - stack_layer_num
-      - max_hierarchy_level (TODO)
-      - head_tail_nodes (for convinient coding)
-    '''
     max_layer_id = 0
     self.max_hierarchy_level = 0
     self.stack_node_patterns = set()
-    self.head_tail_nodes = []
     for node in self.graph.node:
       ret = re.search(pattern, node.name)
       if ret:
@@ -42,13 +33,13 @@ class hierarchyModel:
         self.max_hierarchy_level = max(self.max_hierarchy_level, hierarchy_level)
         node_pattern = ret.groups()[0] + ".{i}" + ret.groups()[2]
         self.stack_node_patterns.add(node_pattern)
-      else:
-        self.head_tail_nodes.append(node.name)
+        self.stack_hierarchy_level = len(ret.groups()[0].split("/"))
 
     self.stack_layer_num = max_layer_id + 1
     logging.info(
       f"Analyzing done! Here is what I get:\n"
       f"  - stack_layer_num: {self.stack_layer_num}\n"
+      f"  - stack_hierarchy_level: {self.stack_hierarchy_level}\n"
       f"  - max_hierarchy_level: {self.max_hierarchy_level}"
     )
 
@@ -66,41 +57,49 @@ class hierarchyModel:
         self.name2module["out_" + out.name] = out
 
   def set_group_schema(self, level):
-    hierarchy_nodes_preview = set()
+    # pre-compute the node num in the specified level
+    hierarchy_groups = set()
     for node in self.graph.node:
-      hierachies = node.name.split("/")
-      hierarchy_name = "/".join(hierachies[:min(len(hierachies), level)])
       if "Constant" in node.name: continue
-      hierarchy_nodes_preview.add(hierarchy_name)
-    logging.info(f"level {level}, node num {len(hierarchy_nodes_preview)}")
+      hierarchy_name = get_hierarchy_name(node.name, level)
+      hierarchy_groups.add(hierarchy_name)
 
-    large_model_detected = False
-    if len(hierarchy_nodes_preview) > LARGE_GRAPH_THRESH:
-      logging.info("Large graph that may cause netron hang")
-      large_model_detected = True
+    large_graph_detected = len(hierarchy_groups) > LARGE_GRAPH_THRESH
+    if large_graph_detected:
+      logging.info(f"Level {level}, node num {len(hierarchy_groups)}. "
+                   f"It is a large graph that may cause netron hang. "
+                   f"Only stack 0 is will be collapsed to avoid this.")
 
-    if large_model_detected:
-      # TODO: only collapse the stack 0, and keep the level of other stacks to layer/stack.X
-      pass
+    stack_0_nodes = [name.replace("{i}", "0") for name in self.stack_node_patterns]
+    hierarchy_groups = dict()
+    for node in self.graph.node:
+      if "Constant" in node.name: continue
+      # only collapse the stack 0, and keep the level of other stacks to layer/stack.X
+      if large_graph_detected and node.name not in stack_0_nodes:
+        hierarchy_name = get_hierarchy_name(node.name, self.stack_hierarchy_level)
+      else:
+        hierarchy_name = get_hierarchy_name(node.name, level)
+
+      if hierarchy_name not in hierarchy_groups.keys():
+        hierarchy_groups[hierarchy_name] = []
+      hierarchy_groups[hierarchy_name].append(node)
+
+    return hierarchy_groups
 
   def group_nodes_with_same_hierarchy(self, level):
-    hierarchy_group = dict()
-
-    for node in self.graph.node:
-      hierachies = node.name.split("/")
-      hierarchy_name = "/".join(hierachies[:min(len(hierachies), level)])
-      if hierarchy_name not in hierarchy_group.keys():
-        hierarchy_group[hierarchy_name] = []
-      hierarchy_group[hierarchy_name].append(node)
+    hierarchy_groups = self.set_group_schema(level)
 
     # https://onnxruntime.ai/docs/extensions/add-op.html
     hierarchy_nodes = []
-    for hierarchy_name in hierarchy_group.keys():
-      nodes = hierarchy_group[hierarchy_name]
+    for hierarchy_name in hierarchy_groups.keys():
+      nodes = hierarchy_groups[hierarchy_name]
+      # TODO: why are the nodes in netron uncolored?
+      group_op_type = get_group_op_type(nodes, hierarchy_name)
       group_inputs = get_group_inputs(nodes)
       group_outputs = get_group_outputs(nodes)
+
       grouped_node = onnx.helper.make_node(
-                            op_type=hierarchy_name,
+                            op_type=group_op_type,
                             inputs=group_inputs,
                             outputs=group_outputs,
                             name=hierarchy_name,
@@ -117,11 +116,10 @@ class hierarchyModel:
     hierarchy_graph = onnx.helper.make_graph(
         nodes=grouped_nodes,
         name="hierarchy_" + str(hierarchy_level),
-        inputs=self.graph.input,  # Graph input
-        outputs=self.graph.output,  # Graph output
+        inputs=self.graph.input,
+        outputs=self.graph.output,
         initializer=self.graph.initializer,
     )
-    # hierarchy_graph = remove_isolated_nodes(hierarchy_graph, self.name2module)
 
     model_def = onnx.helper.make_model(hierarchy_graph,
                                        producer_name="netron-hierarchy")
