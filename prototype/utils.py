@@ -44,9 +44,3 @@ def get_group_outputs(group_nodes):
 def remove_input_constant(nodes):
   filtered_nodes = [node for node in nodes if "Constant" not in node.op_type]
   return filtered_nodes
-
-def get_hierarchy_name(name, level, delimiter="/"):
-  hierarchies = name.split(delimiter)
-  hierarchy_name = delimiter.join(hierarchies[:min(len(hierarchies), level)])
-
-  return hierarchy_name

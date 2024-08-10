@@ -24,6 +24,7 @@ class hierarchyModel:
     max_layer_id = 0
     self.max_hierarchy_level = 0
     self.stack_node_patterns = set()
+    self.non_stack_node_names = list()
     for node in self.graph.node:
       ret = re.search(pattern, node.name)
       if ret:
@@ -34,6 +35,8 @@ class hierarchyModel:
         node_pattern = ret.groups()[0] + ".{i}" + ret.groups()[2]
         self.stack_node_patterns.add(node_pattern)
         self.stack_hierarchy_level = len(ret.groups()[0].split("/"))
+      else:
+        self.non_stack_node_names.append(node.name)
 
     self.stack_layer_num = max_layer_id + 1
     logging.info(
@@ -56,12 +59,21 @@ class hierarchyModel:
         # add `out_` in case the output has the same name with the last node
         self.name2module["out_" + out.name] = out
 
+  def get_hierarchy_name(self, name, level, delimiter="/"):
+    if name in self.non_stack_node_names:
+      return name
+
+    hierarchies = name.split(delimiter)
+    hierarchy_name = delimiter.join(hierarchies[:min(len(hierarchies), level)])
+
+    return hierarchy_name
+
   def set_group_schema(self, level):
     # pre-compute the node num in the specified level
     hierarchy_groups = set()
     for node in self.graph.node:
       if "Constant" in node.name: continue
-      hierarchy_name = get_hierarchy_name(node.name, level)
+      hierarchy_name = self.get_hierarchy_name(node.name, level)
       hierarchy_groups.add(hierarchy_name)
 
     large_graph_detected = len(hierarchy_groups) > LARGE_GRAPH_THRESH
@@ -76,9 +88,9 @@ class hierarchyModel:
       if "Constant" in node.name: continue
       # only collapse the stack 0, and keep the level of other stacks to layer/stack.X
       if large_graph_detected and node.name not in stack_0_nodes:
-        hierarchy_name = get_hierarchy_name(node.name, self.stack_hierarchy_level)
+        hierarchy_name = self.get_hierarchy_name(node.name, self.stack_hierarchy_level)
       else:
-        hierarchy_name = get_hierarchy_name(node.name, level)
+        hierarchy_name = self.get_hierarchy_name(node.name, level)
 
       if hierarchy_name not in hierarchy_groups.keys():
         hierarchy_groups[hierarchy_name] = []
@@ -130,7 +142,7 @@ def parse_args():
   parser = argparse.ArgumentParser()
   parser.add_argument('-i', '--model-path', type=str,
                       help='path to load the model')
-  parser.add_argument('-l', '--hierarchy-level', type=int,
+  parser.add_argument('-l', '--hierarchy-level', type=int, required=True,
                       help='specify which level of hierarchy to export')
   parser.add_argument('-o', '--output-path', type=str, default=None,
                       help='path to save the result model')
