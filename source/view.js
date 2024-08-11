@@ -10,6 +10,7 @@ import * as flatbuffers from './flatbuffers.js';
 import * as hdf5 from './hdf5.js';
 import * as python from './python.js';
 import * as grapher from './grapher.js';
+import * as hierarchy from './hierarchy.js';
 
 const view =  {};
 const markdown = {};
@@ -666,6 +667,7 @@ view.View = class {
                 };
                 stack.push(entry);
             }
+            console.log("start _updateGraph");
             return await this._updateGraph(model, stack);
         } catch (error) {
             error.context = !error.context && context && context.identifier ? context.identifier : error.context || '';
@@ -706,7 +708,10 @@ view.View = class {
         const update = async (model, stack) => {
             this._model = model;
             this._stack = stack;
+            console.log("start renderGraph");
+            console.log(this._model, this.activeGraph, this.activeSignature, this._options);
             const status = await this.renderGraph(this._model, this.activeGraph, this.activeSignature, this._options);
+            console.log("end renderGraph, status", status)
             if (status !== '') {
                 this._model = null;
                 this._stack = [];
@@ -767,6 +772,7 @@ view.View = class {
             await update(model, stack);
             return this._model;
         } catch (error) {
+            console.log("catch error: update()");
             await update(lastModel, lastStack);
             throw error;
         }
@@ -797,6 +803,7 @@ view.View = class {
             canvas.removeChild(canvas.lastChild);
         }
         if (!graph) {
+            console.log("!graph, return");
             return '';
         }
         this._zoom = 1;
@@ -817,8 +824,11 @@ view.View = class {
         if (nodes.length > 3000) {
             layout.ranker = 'longest-path';
         }
+        console.log("start view.Graph");
         const viewGraph = new view.Graph(this, this._host, model, options, groups, layout);
+        console.log(viewGraph);
         viewGraph.add(graph, signature);
+        console.log("viewGraph.add done");
         // Workaround for Safari background drag/zoom issue:
         // https://stackoverflow.com/questions/40887193/d3-js-zoom-is-not-working-with-mousewheel-in-safari
         const background = this._host.document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -1728,13 +1738,16 @@ view.Graph = class extends grapher.Graph {
     }
 
     createNode(node, type) {
+        console.log(node, type);
         if (type) {
             const obj = new view.Node(this, { type });
             obj.name = (this._nodeKey++).toString();
             this._table.set(type, obj);
             return obj;
         }
+        console.log("begin create view.Node");
         const obj = new view.Node(this, node);
+        console.log(obj);
         obj.name = (this._nodeKey++).toString();
         this._table.set(node, obj);
 
@@ -1803,6 +1816,7 @@ view.Graph = class extends grapher.Graph {
         const clusters = new Set();
         const clusterParentMap = new Map();
         const groups = graph.groups;
+        console.log("if (groups)")
         if (groups) {
             for (const node of graph.nodes) {
                 if (node.group) {
@@ -1817,6 +1831,7 @@ view.Graph = class extends grapher.Graph {
         }
         const inputs = signature ? signature.inputs : graph.inputs;
         const outputs = signature ? signature.outputs : graph.outputs;
+        console.log("for (const argument of inputs)")
         if (Array.isArray(inputs)) {
             for (const argument of inputs) {
                 if (argument.visible !== false) {
@@ -1828,8 +1843,11 @@ view.Graph = class extends grapher.Graph {
                 }
             }
         }
+        console.log("for (const node of graph.nodes)")
         for (const node of graph.nodes) {
+            console.log("begin this.createNode")
             const viewNode = this.createNode(node);
+            console.log("end this.createNode()". viewNode)
             this.setNode(viewNode);
             let outputs = node.outputs;
             if (node.chain && node.chain.length > 0) {
@@ -1838,6 +1856,7 @@ view.Graph = class extends grapher.Graph {
                     outputs = chainOutputs;
                 }
             }
+            console.log(outputs)
             for (const argument of outputs) {
                 for (const value of argument.value) {
                     if (!value) {
@@ -1848,6 +1867,7 @@ view.Graph = class extends grapher.Graph {
                     }
                 }
             }
+            console.log("end outputs")
             if (node.controlDependencies && node.controlDependencies.length > 0) {
                 for (const value of node.controlDependencies) {
                     this.createValue(value).controlDependency(viewNode);
@@ -1885,6 +1905,7 @@ view.Graph = class extends grapher.Graph {
                 }
             }
         }
+        console.log("for (const argument of outputs)")
         if (Array.isArray(outputs)) {
             for (const argument of outputs) {
                 if (argument.visible !== false) {
@@ -1983,6 +2004,7 @@ view.Node = class extends grapher.Node {
         const header =  this.header();
         const type = node.type;
         const category = type && type.category ? type.category : '';
+        console.log(type);
         if (typeof type.name !== 'string' || !type.name.split) { // #416
             const error = new view.Error(`Unsupported node type '${JSON.stringify(type.name)}'.`);
             if (this.context.model && this.context.model.identifier) {
@@ -5900,11 +5922,15 @@ view.ModelFactoryService = class {
             if (context.type) {
                 try {
                     /* eslint-disable no-await-in-loop */
-                    const model = await factory.open(context);
+                    const flat_model = await factory.open(context);
                     /* eslint-enable no-await-in-loop */
-                    if (!model.identifier) {
-                        model.identifier = context.identifier;
+                    if (!flat_model.identifier) {
+                        flat_model.identifier = context.identifier;
                     }
+                    console.log(flat_model);
+                    console.log(hierarchy);
+                    const model = new hierarchy.Model(flat_model, 3);
+                    console.log(model);
                     return model;
                 } catch (error) {
                     delete context.type;
