@@ -2004,7 +2004,6 @@ view.Node = class extends grapher.Node {
         const header =  this.header();
         const type = node.type;
         const category = type && type.category ? type.category : '';
-        console.log(type);
         if (typeof type.name !== 'string' || !type.name.split) { // #416
             const error = new view.Error(`Unsupported node type '${JSON.stringify(type.name)}'.`);
             if (this.context.model && this.context.model.identifier) {
@@ -2057,11 +2056,19 @@ view.Node = class extends grapher.Node {
                     objects.push(argument);
                 } else if (options.weights && argument.visible !== false && Array.isArray(argument.value) && argument.value.length === 1 && argument.value[0].initializer) {
                     const item = this.context.createArgument(argument);
+                    if (node instanceof hierarchy.Node) {
+                        hiddenTensors = true;
+                        continue;
+                    }
                     list().add(item);
                 } else if (options.weights && (argument.visible === false || Array.isArray(argument.value) && argument.value.length > 1) && (!argument.type || argument.type.endsWith('*')) && argument.value.some((value) => value.initializer)) {
                     hiddenTensors = true;
                 } else if (options.attributes && argument.visible !== false && argument.type && !argument.type.endsWith('*')) {
                     const item = attribute(argument);
+                    if (node instanceof hierarchy.Node) {
+                        hiddenTensors = true;
+                        continue;
+                    }
                     list().add(item);
                 }
             }

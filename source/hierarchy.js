@@ -66,11 +66,10 @@ hierarchy.Node = class {
 hierarchy.NodeType = class {
 
     constructor(nodes) {
-        this.name = "hierarchy"; // TODO: change to more readable one?
+        this.name = "hierarchy"; // TODO: change to more readable one
     }
 }
 
 
 export const Model = hierarchy.Model;
-// export const Telemetry = base.Telemetry;
-// export const Metadata = base.Metadata;
+export const Node = hierarchy.Node;
