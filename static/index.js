@@ -13,7 +13,7 @@ window.exports.require = function(id, callback) {
     const index = base.lastIndexOf('/');
     base = index > 0 ? base.substring(0, index + 1) : base;
     base = base.lastIndexOf('/') === base.length - 1 ? base : base + '/';
-    var url = base + id + '.js';
+    var url = base + "static/" + id + '.js';
     var scripts = document.head.getElementsByTagName('script');
     for (var i = 0; i < scripts.length; i++) {
         if (url === scripts[i].getAttribute('src')) {

@@ -652,7 +652,7 @@ app.View = class {
             show: false,
             title: electron.app.name,
             backgroundColor: electron.nativeTheme.shouldUseDarkColors ? '#1e1e1e' : '#ececec',
-            icon: electron.nativeImage.createFromPath(path.join(dirname, 'icon.png')),
+            icon: electron.nativeImage.createFromPath(path.join(dirname, 'static/icon.png')),
             minWidth: 600,
             minHeight: 600,
             width: size.width > 1024 ? 1024 : size.width,

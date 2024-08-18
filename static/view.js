@@ -1676,7 +1676,7 @@ view.Worker = class {
     }
 
     _create() {
-        this._worker = this._host.worker('./worker');
+        this._worker = this._host.worker('./static/worker');
         this._worker.addEventListener('message', (e) => {
             this._cancel(false);
             const message = e.data;
@@ -6092,7 +6092,7 @@ view.ModelFactoryService = class {
                     if (file.startsWith('./')) {
                         await this._host.require(file);
                     } else if (file.endsWith('.json')) {
-                        await this._host.request(file, 'utf-8', null);
+                        await this._host.request("static/" + file, 'utf-8', null);
                     }
                 } catch {
                     // continue regardless of error

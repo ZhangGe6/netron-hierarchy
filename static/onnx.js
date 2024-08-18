@@ -911,7 +911,7 @@ onnx.Metadata = class {
             return onnx.Metadata._metadata;
         }
         try {
-            const data = await context.request('onnx-metadata.json');
+            const data = await context.request('static/onnx-metadata.json');
             onnx.Metadata._metadata = new onnx.Metadata(data);
             return onnx.Metadata._metadata;
         } catch {
