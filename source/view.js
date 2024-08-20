@@ -5936,7 +5936,7 @@ view.ModelFactoryService = class {
                     }
                     console.log(flat_model);
                     console.log(hierarchy);
-                    const model = new hierarchy.Model(flat_model, 3);
+                    const model = new hierarchy.Model(flat_model, 7);
                     console.log(model);
                     return model;
                 } catch (error) {
