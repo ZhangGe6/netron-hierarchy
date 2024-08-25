@@ -5934,10 +5934,12 @@ view.ModelFactoryService = class {
                     if (!flat_model.identifier) {
                         flat_model.identifier = context.identifier;
                     }
-                    console.log(flat_model);
-                    console.log(hierarchy);
-                    const model = new hierarchy.Model(flat_model, 7);
+                    // console.log(flat_model);
+                    // console.log(hierarchy);
+                    const model = new hierarchy.Model(flat_model);
                     console.log(model);
+                    model.set_level(7);
+                    model.build();
                     return model;
                 } catch (error) {
                     delete context.type;

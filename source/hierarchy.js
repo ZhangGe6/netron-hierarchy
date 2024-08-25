@@ -2,86 +2,39 @@ const hierarchy = {};
 
 hierarchy.Model = class {
 
-    constructor(flat_model, level) {
+    constructor(flat_model) {
         this.graphs = [];
         for (const graph of flat_model.graphs) {
-            this.graphs.push(new hierarchy.Graph(graph, level));
+            this.graphs.push(new hierarchy.Graph(graph));
+        }
+    }
+
+    set_level(level) {
+        for (const graph of this.graphs) {
+            graph.set_level(level);
+        }
+    }
+
+    build() {
+        for (const graph of this.graphs) {
+            graph.build();
         }
     }
 };
 
 hierarchy.Graph = class {
 
-    constructor(graph, level) {
+    constructor(graph) {
         this.graph = graph;
         this.inputs = graph.inputs;
         this.outputs = graph.outputs;
-        this.level = level;
         this.nodes = [];
 
         this.analyze_graph();
-
-        // pre-compute the node num in the specified level
-        var nodes = new Set();
-        for (const node of this.graph.nodes) {
-            nodes.add(this.get_hierarchy_name(node.name, level));
-        }
-        var large_graph_detected = nodes.size > 20;
-        if (large_graph_detected) {
-            console.log("Level:", level, "node num:", nodes.size,
-                        "It is a large graph that may cause netron hang. ",
-                        "Only stack 0 is will be collapsed to avoid this.")
-        }
-
-
-        var stack_0_nodes = new Array();
-        for (const name of this.stack_node_patterns) {
-            stack_0_nodes.push(name.replace("{i}", "0"));
-        }
-        console.log(stack_0_nodes)
-
-        var hierarchy_groups = new Map();
-        for (const node of graph.nodes) {
-            var hierarchy_name = "";
-            // only collapse the stack 0, and keep the level of other stacks to layer/stack.X
-            // console.log(large_graph_detected, node.name, stack_0_nodes.includes(node.name))
-            if (large_graph_detected && stack_0_nodes.includes(node.name)) {
-                hierarchy_name = this.get_hierarchy_name(node.name, level);
-            } else {
-                hierarchy_name = this.get_hierarchy_name(node.name, this.stack_hierarchy_level);
-                // console.log(node.name, this.stack_hierarchy_level, hierarchy_name)
-            }
-
-            if (!hierarchy_groups.has(hierarchy_name)) {
-                hierarchy_groups.set(hierarchy_name, new Array());
-            }
-            hierarchy_groups.get(hierarchy_name).push(node);
-        }
-
-        var use_num_map = new Map();
-        for (const node of graph.nodes) {
-            for (const inp of node.inputs) {
-                for (const value of inp.value) {
-                    var name = value.name;
-                    if (!use_num_map.has(name)) {
-                        use_num_map.set(name, 0);
-                    }
-                    use_num_map.set(name, use_num_map.get(name) + 1);
-                }
-            }
-        }
-        for (const output of graph.outputs) {
-            var name = output.name;
-            if (!use_num_map.has(name)) {
-                use_num_map.set(name, 0);
-            }
-            use_num_map.set(name, use_num_map.get(name) + 1);
-        }
-
-        // console.log(use_num_map)
-        // group_nodes_with_same_hierarchy
-        for (let [hierarchy_name, group_nodes] of hierarchy_groups) {
-            this.nodes.push(new hierarchy.Node(hierarchy_name, group_nodes, use_num_map));
+        this.level = this.max_hierarchy_level;
+        if (this.graph.nodes.length > 20) {
+            // large graph detected. Use stack level to avoid hang
+            this.level = this.stack_hierarchy_level;
         }
     }
 
@@ -118,6 +71,74 @@ hierarchy.Graph = class {
         // console.log("- non_stack_node_names:", this.non_stack_node_names);
     }
 
+    set_level(level) {
+        this.level = level;
+    }
+
+    build() {
+        // pre-compute the node num in the specified level
+        var nodes = new Set();
+        for (const node of this.graph.nodes) {
+            nodes.add(this.get_hierarchy_name(node.name, this.level));
+        }
+        var large_graph_detected = nodes.size > 20;
+        if (large_graph_detected) {
+            console.log("Level:", this.level, "node num:", nodes.size,
+                        "It is a large graph that may cause netron hang. ",
+                        "Only stack 0 is will be collapsed to avoid this.")
+        }
+
+
+        var stack_0_nodes = new Array();
+        for (const name of this.stack_node_patterns) {
+            stack_0_nodes.push(name.replace("{i}", "0"));
+        }
+        console.log(stack_0_nodes)
+
+        var hierarchy_groups = new Map();
+        for (const node of this.graph.nodes) {
+            var hierarchy_name = "";
+            // only collapse the stack 0, and keep the level of other stacks to layer/stack.X
+            // console.log(large_graph_detected, node.name, stack_0_nodes.includes(node.name))
+            if (large_graph_detected && stack_0_nodes.includes(node.name)) {
+                hierarchy_name = this.get_hierarchy_name(node.name, this.level);
+            } else {
+                hierarchy_name = this.get_hierarchy_name(node.name, this.stack_hierarchy_level);
+                // console.log(node.name, this.stack_hierarchy_level, hierarchy_name)
+            }
+
+            if (!hierarchy_groups.has(hierarchy_name)) {
+                hierarchy_groups.set(hierarchy_name, new Array());
+            }
+            hierarchy_groups.get(hierarchy_name).push(node);
+        }
+
+        var use_num_map = new Map();
+        for (const node of this.graph.nodes) {
+            for (const inp of node.inputs) {
+                for (const value of inp.value) {
+                    var name = value.name;
+                    if (!use_num_map.has(name)) {
+                        use_num_map.set(name, 0);
+                    }
+                    use_num_map.set(name, use_num_map.get(name) + 1);
+                }
+            }
+        }
+        for (const output of this.graph.outputs) {
+            var name = output.name;
+            if (!use_num_map.has(name)) {
+                use_num_map.set(name, 0);
+            }
+            use_num_map.set(name, use_num_map.get(name) + 1);
+        }
+
+        // console.log(use_num_map)
+        // group_nodes_with_same_hierarchy
+        for (let [hierarchy_name, group_nodes] of hierarchy_groups) {
+            this.nodes.push(new hierarchy.Node(hierarchy_name, group_nodes, use_num_map));
+        }
+    }
 
     get_hierarchy_name(name, level) {
         if (this.non_stack_node_names.includes(name)) {
