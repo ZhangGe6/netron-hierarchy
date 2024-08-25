@@ -31,11 +31,13 @@ hierarchy.Graph = class {
         this.nodes = [];
 
         this.analyze_graph();
+        // default hierarchy level
+        // if large graph detected. Use stack level to avoid graph rendering hang
         this.level = this.max_hierarchy_level;
         if (this.graph.nodes.length > 20) {
-            // large graph detected. Use stack level to avoid hang
             this.level = this.stack_hierarchy_level;
         }
+        document.getElementById("current-level-value").innerHTML = this.level;
     }
 
     analyze_graph() {
@@ -69,6 +71,9 @@ hierarchy.Graph = class {
         console.log("- stack_hierarchy_level:", this.stack_hierarchy_level);
         console.log("- max_hierarchy_level:", this.max_hierarchy_level);
         // console.log("- non_stack_node_names:", this.non_stack_node_names);
+
+        document.getElementById("max-level-value").innerHTML = this.max_hierarchy_level;
+        document.getElementById("stack-level-value").innerHTML = this.stack_hierarchy_level;
     }
 
     set_level(level) {
@@ -93,18 +98,18 @@ hierarchy.Graph = class {
         for (const name of this.stack_node_patterns) {
             stack_0_nodes.push(name.replace("{i}", "0"));
         }
-        console.log(stack_0_nodes)
+        // console.log(stack_0_nodes)
 
         var hierarchy_groups = new Map();
         for (const node of this.graph.nodes) {
             var hierarchy_name = "";
             // only collapse the stack 0, and keep the level of other stacks to layer/stack.X
-            // console.log(large_graph_detected, node.name, stack_0_nodes.includes(node.name))
+            // // console.log(large_graph_detected, node.name, stack_0_nodes.includes(node.name))
             if (large_graph_detected && stack_0_nodes.includes(node.name)) {
                 hierarchy_name = this.get_hierarchy_name(node.name, this.level);
             } else {
                 hierarchy_name = this.get_hierarchy_name(node.name, this.stack_hierarchy_level);
-                // console.log(node.name, this.stack_hierarchy_level, hierarchy_name)
+                // // console.log(node.name, this.stack_hierarchy_level, hierarchy_name)
             }
 
             if (!hierarchy_groups.has(hierarchy_name)) {
@@ -133,7 +138,7 @@ hierarchy.Graph = class {
             use_num_map.set(name, use_num_map.get(name) + 1);
         }
 
-        // console.log(use_num_map)
+        // // console.log(use_num_map)
         // group_nodes_with_same_hierarchy
         for (let [hierarchy_name, group_nodes] of hierarchy_groups) {
             this.nodes.push(new hierarchy.Node(hierarchy_name, group_nodes, use_num_map));
@@ -180,11 +185,11 @@ hierarchy.Node = class {
         var group_outputs = [];
         for (const node of nodes) {
             for (const input of node.inputs) {
-                // console.log(input)
+                // // console.log(input)
                 for (const value of input.value) {
                     var name = value.name;
                     if (node.name == "/pooler/activation/Tanh") {
-                        console.log(use_num_map.get(name));
+                        // console.log(use_num_map.get(name));
                     }
                     use_num_map.set(name, use_num_map.get(name) - 1);
                 }
@@ -201,13 +206,13 @@ hierarchy.Node = class {
                 }
             }
         }
-        console.log(nodes);
-        console.log(group_outputs)
+        // console.log(nodes);
+        // console.log(group_outputs)
         return group_outputs;
     }
         // get the inputs that are not the output of any node in group_nodes
         get_group_inputs(nodes) {
-            console.log(nodes);
+            // console.log(nodes);
             var group_inputs = [];
             var outputs = [];
             for (const node of nodes) {
@@ -217,10 +222,10 @@ hierarchy.Node = class {
                     }
                 }
             }
-            // console.log(outputs);
+            // // console.log(outputs);
             for (const node of nodes) {
                 for (const input of node.inputs) {
-                    // console.log(input.name, outputs.includes(input.name));
+                    // // console.log(input.name, outputs.includes(input.name));
                     var is_group_input = false;
                     for (const value of input.value) {
                         // mark it as group_input if there are value that attach to external world
@@ -236,7 +241,7 @@ hierarchy.Node = class {
 
                 }
             }
-            // console.log(group_inputs)
+            // // console.log(group_inputs)
 
             return group_inputs;
         }
@@ -253,9 +258,9 @@ hierarchy.Node = class {
                 }
             }
 
-            // console.log(inputs);
+            // // console.log(inputs);
             for (const node of nodes) {
-                console.log(node)
+                // console.log(node)
                 for (const output of node.outputs) {
                     var is_group_output = false;
                     for (const value of output.value) {

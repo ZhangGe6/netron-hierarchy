@@ -29,6 +29,8 @@ button { font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI"
 .default .graph { display: flex; opacity: 1; }
 .default .toolbar { display: table; }
 .toolbar { position: absolute; bottom: 10px; left: 10px; padding: 0; margin: 0; user-select: none; -webkit-user-select: none; -moz-user-select: none; }
+.default .hierarchy-info { display: table; }
+.hierarchy-info { position: absolute; bottom: 80px; left: 10px; padding: 0; margin: 0; user-select: none; -webkit-user-select: none; -moz-user-select: none; }
 .toolbar button:focus { outline: 0; }
 .toolbar-button { float: left; background: None; border-radius: 6px; border: 0; margin: 0; margin-right: 1px; padding: 0; fill: None; stroke: #777; cursor: pointer; width: 24px; height: 24px; user-select: none; }
 .toolbar-path { float: left }
@@ -128,6 +130,7 @@ button { font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI"
 .welcome.spinner .graph { display: flex; opacity: 0; }
 .welcome .notification .logo-name { display: none; }
 .welcome .toolbar { display: none; }
+.welcome .hierarchy-info { display: none; }
 @media (prefers-color-scheme: dark) {
 :root { color-scheme: dark; }
 .default { background-color: #404040; }
@@ -368,6 +371,19 @@ button { font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI"
         </button>
     </div>
 </div>
+
+<div id="hierarchy-info" class="hierarchy-info">
+    <span id="max-level">max level:
+        <span id="max-level-value">none</span><br>
+    </span>
+    <span id="stack-level">stack level:
+        <span id="stack-level-value">none</span><br>
+    </span>
+    <span id="current-level">current level:
+        <span id="current-level-value"></span><br>
+    </span>
+</div>
+
 <div id="logo" class="center logo">
     <a href="https://github.com/lutzroeder/netron" target="blank_">
         <svg class="center logo-text" viewbox="0 0 5120 1024">
