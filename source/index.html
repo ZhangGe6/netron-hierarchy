@@ -130,7 +130,6 @@ button { font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI"
 .welcome.spinner .graph { display: flex; opacity: 0; }
 .welcome .notification .logo-name { display: none; }
 .welcome .toolbar { display: none; }
-.welcome .hierarchy-info { display: none; }
 @media (prefers-color-scheme: dark) {
 :root { color-scheme: dark; }
 .default { background-color: #404040; }
@@ -291,6 +290,18 @@ button { font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI"
 .menu { transition: none; }
 .sidebar { transition: none; }
 }
+.welcome .hierarchy-info { display: none; }
+.hierarchy-level-set-button {
+    cursor: pointer;
+    background-color: white;
+    border: 1px solid grey;
+    border-radius: 3px;
+    color: black;
+    font-family:"Oliviar Sans Light";
+    font-size: 20px;
+}
+.hierarchy-level-set-button:active {  background: #e7e7e7; }
+
 </style>
 </head>
 <body class="welcome spinner">
@@ -382,6 +393,30 @@ button { font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI"
     <span id="current-level">current level:
         <span id="current-level-value"></span><br>
     </span>
+
+    <button id="inc-hierarchy-level" class="toolbar-button" title="Increase hierarchy level">
+        <svg class="toolbar-icon" viewbox="0 0 100 100">
+            <circle class="border" cx="50" cy="50" r="35" stroke-width="8" stroke="#fff"></circle>
+            <line class="border" x1="50" y1="38" x2="50" y2="62" stroke-width="8" stroke-linecap="round" stroke="#fff"></line>
+            <line class="border" x1="38" y1="50" x2="62" y2="50" stroke-width="8" stroke-linecap="round" stroke="#fff"></line>
+            <line class="border" x1="78" y1="78" x2="82" y2="82" stroke-width="12" stroke-linecap="square" stroke="#fff"></line>
+            <circle class="stroke" cx="50" cy="50" r="35" stroke-width="4"></circle>
+            <line class="stroke" x1="50" y1="38" x2="50" y2="62" stroke-width="4" stroke-linecap="round"></line>
+            <line class="stroke" x1="38" y1="50" x2="62" y2="50" stroke-width="4" stroke-linecap="round"></line>
+            <line class="stroke" x1="78" y1="78" x2="82" y2="82" stroke-width="8" stroke-linecap="square"></line>
+        </svg>
+    </button>
+
+    <button id="dec-hierarchy-level" class="toolbar-button" title="Decrease hierarchy level">
+        <svg class="toolbar-icon" viewbox="0 0 100 100">
+            <circle class="border" cx="50" cy="50" r="35" stroke-width="8" stroke="#fff"></circle>
+            <line class="border" x1="38" y1="50" x2="62" y2="50" stroke-width="8" stroke-linecap="round" stroke="#fff"></line>
+            <line class="border" x1="78" y1="78" x2="82" y2="82" stroke-width="12" stroke-linecap="square" stroke="#fff"></line>
+            <circle class="stroke" cx="50" cy="50" r="35" stroke-width="4"></circle>
+            <line class="stroke" x1="38" y1="50" x2="62" y2="50" stroke-width="4" stroke-linecap="round"></line>
+            <line class="stroke" x1="78" y1="78" x2="82" y2="82" stroke-width="8" stroke-linecap="square"></line>
+        </svg>
+    </button>
 </div>
 
 <div id="logo" class="center logo">

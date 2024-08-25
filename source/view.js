@@ -55,6 +55,12 @@ view.View = class {
             this._element('zoom-out-button').addEventListener('click', () => {
                 this.zoomOut();
             });
+            this._element('inc-hierarchy-level').addEventListener('click', () => {
+                this.increaseHierarchyLevel();
+            });
+            this._element('dec-hierarchy-level').addEventListener('click', () => {
+                this.decreaseHierarchyLevel();
+            });
             this._element('toolbar-path-back-button').addEventListener('click', async () => {
                 await this.popGraph();
             });
@@ -389,6 +395,37 @@ view.View = class {
         this._updateZoom(1);
     }
 
+
+    build_stack(model) {
+        const stack = [];
+        if (Array.isArray(model.graphs) && model.graphs.length > 0) {
+            const [graph] = model.graphs;
+            const entry = {
+                graph,
+                signature: Array.isArray(graph.signatures) && graph.signatures.length > 0 ? graph.signatures[0] : null
+            };
+            stack.push(entry);
+        }
+
+        return stack;
+    }
+
+    async increaseHierarchyLevel() {
+        var level = this.model.level;
+        this.model.set_level(level + 1);
+        this.model.build();
+        const stack = this.build_stack(this.model);
+        await this._updateGraph(this.model, stack);
+    }
+
+    async decreaseHierarchyLevel() {
+        var level = this.model.level;
+        this.model.set_level(level - 1);
+        this.model.build();
+        const stack = this.build_stack(this.model);
+        await this._updateGraph(this.model, stack);
+    }
+
     _activate() {
         if (!this._events) {
             this._events = {};
@@ -667,7 +704,6 @@ view.View = class {
                 };
                 stack.push(entry);
             }
-            console.log("start _updateGraph");
             return await this._updateGraph(model, stack);
         } catch (error) {
             error.context = !error.context && context && context.identifier ? context.identifier : error.context || '';
@@ -708,10 +744,8 @@ view.View = class {
         const update = async (model, stack) => {
             this._model = model;
             this._stack = stack;
-            console.log("start renderGraph");
-            console.log(this._model, this.activeGraph, this.activeSignature, this._options);
+            // console.log(this._model, this.activeGraph, this.activeSignature, this._options);
             const status = await this.renderGraph(this._model, this.activeGraph, this.activeSignature, this._options);
-            console.log("end renderGraph, status", status)
             if (status !== '') {
                 this._model = null;
                 this._stack = [];
@@ -824,11 +858,9 @@ view.View = class {
         if (nodes.length > 3000) {
             layout.ranker = 'longest-path';
         }
-        console.log("start view.Graph");
         const viewGraph = new view.Graph(this, this._host, model, options, groups, layout);
-        console.log(viewGraph);
+        // console.log(viewGraph);
         viewGraph.add(graph, signature);
-        console.log("viewGraph.add done");
         // Workaround for Safari background drag/zoom issue:
         // https://stackoverflow.com/questions/40887193/d3-js-zoom-is-not-working-with-mousewheel-in-safari
         const background = this._host.document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -1738,16 +1770,13 @@ view.Graph = class extends grapher.Graph {
     }
 
     createNode(node, type) {
-        console.log(node, type);
         if (type) {
             const obj = new view.Node(this, { type });
             obj.name = (this._nodeKey++).toString();
             this._table.set(type, obj);
             return obj;
         }
-        console.log("begin create view.Node");
         const obj = new view.Node(this, node);
-        console.log(obj);
         obj.name = (this._nodeKey++).toString();
         this._table.set(node, obj);
 
@@ -1816,7 +1845,6 @@ view.Graph = class extends grapher.Graph {
         const clusters = new Set();
         const clusterParentMap = new Map();
         const groups = graph.groups;
-        console.log("if (groups)")
         if (groups) {
             for (const node of graph.nodes) {
                 if (node.group) {
@@ -1831,7 +1859,6 @@ view.Graph = class extends grapher.Graph {
         }
         const inputs = signature ? signature.inputs : graph.inputs;
         const outputs = signature ? signature.outputs : graph.outputs;
-        console.log("for (const argument of inputs)")
         if (Array.isArray(inputs)) {
             for (const argument of inputs) {
                 if (argument.visible !== false) {
@@ -1843,11 +1870,8 @@ view.Graph = class extends grapher.Graph {
                 }
             }
         }
-        console.log("for (const node of graph.nodes)")
         for (const node of graph.nodes) {
-            console.log("begin this.createNode")
             const viewNode = this.createNode(node);
-            console.log("end this.createNode()". viewNode)
             this.setNode(viewNode);
             let outputs = node.outputs;
             if (node.chain && node.chain.length > 0) {
@@ -1856,7 +1880,6 @@ view.Graph = class extends grapher.Graph {
                     outputs = chainOutputs;
                 }
             }
-            console.log(outputs)
             for (const argument of outputs) {
                 for (const value of argument.value) {
                     if (!value) {
@@ -1867,7 +1890,6 @@ view.Graph = class extends grapher.Graph {
                     }
                 }
             }
-            console.log("end outputs")
             if (node.controlDependencies && node.controlDependencies.length > 0) {
                 for (const value of node.controlDependencies) {
                     this.createValue(value).controlDependency(viewNode);
@@ -1905,7 +1927,6 @@ view.Graph = class extends grapher.Graph {
                 }
             }
         }
-        console.log("for (const argument of outputs)")
         if (Array.isArray(outputs)) {
             for (const argument of outputs) {
                 if (argument.visible !== false) {
@@ -5937,8 +5958,8 @@ view.ModelFactoryService = class {
                     // console.log(flat_model);
                     // console.log(hierarchy);
                     const model = new hierarchy.Model(flat_model);
-                    console.log(model);
-                    model.set_level(7);
+                    // console.log(model);
+                    model.set_level(1);
                     model.build();
                     return model;
                 } catch (error) {

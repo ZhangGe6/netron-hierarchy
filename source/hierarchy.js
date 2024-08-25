@@ -3,10 +3,14 @@ const hierarchy = {};
 hierarchy.Model = class {
 
     constructor(flat_model) {
-        this.graphs = [];
+        this.graphs = new Array();
         for (const graph of flat_model.graphs) {
             this.graphs.push(new hierarchy.Graph(graph));
         }
+    }
+
+    get level() {
+        return this.graphs[0].level;
     }
 
     set_level(level) {
@@ -26,15 +30,13 @@ hierarchy.Graph = class {
 
     constructor(graph) {
         this.graph = graph;
-        this.inputs = graph.inputs;
-        this.outputs = graph.outputs;
-        this.nodes = [];
+        this.large_graph_thresh = 2000;
 
         this.analyze_graph();
         // default hierarchy level
         // if large graph detected. Use stack level to avoid graph rendering hang
         this.level = this.max_hierarchy_level;
-        if (this.graph.nodes.length > 20) {
+        if (this.graph.nodes.length > this.large_graph_thresh) {
             this.level = this.stack_hierarchy_level;
         }
         document.getElementById("current-level-value").innerHTML = this.level;
@@ -77,16 +79,22 @@ hierarchy.Graph = class {
     }
 
     set_level(level) {
-        this.level = level;
+        this.level = Math.min(Math.max(1, level), this.max_hierarchy_level);
     }
 
     build() {
+        this.inputs = this.graph.inputs;
+        this.outputs = this.graph.outputs;
+        this.nodes = [];
+
+        document.getElementById("current-level-value").innerHTML = this.level;
+        console.log("building model with level:", this.level);
         // pre-compute the node num in the specified level
         var nodes = new Set();
         for (const node of this.graph.nodes) {
             nodes.add(this.get_hierarchy_name(node.name, this.level));
         }
-        var large_graph_detected = nodes.size > 20;
+        var large_graph_detected = nodes.size > this.large_graph_thresh;
         if (large_graph_detected) {
             console.log("Level:", this.level, "node num:", nodes.size,
                         "It is a large graph that may cause netron hang. ",
@@ -104,12 +112,14 @@ hierarchy.Graph = class {
         for (const node of this.graph.nodes) {
             var hierarchy_name = "";
             // only collapse the stack 0, and keep the level of other stacks to layer/stack.X
-            // // console.log(large_graph_detected, node.name, stack_0_nodes.includes(node.name))
-            if (large_graph_detected && stack_0_nodes.includes(node.name)) {
-                hierarchy_name = this.get_hierarchy_name(node.name, this.level);
+            if (large_graph_detected) {
+                if (stack_0_nodes.includes(node.name)) {
+                    hierarchy_name = this.get_hierarchy_name(node.name, this.level);
+                } else {
+                    hierarchy_name = this.get_hierarchy_name(node.name, this.stack_hierarchy_level);
+                }
             } else {
-                hierarchy_name = this.get_hierarchy_name(node.name, this.stack_hierarchy_level);
-                // // console.log(node.name, this.stack_hierarchy_level, hierarchy_name)
+                hierarchy_name = this.get_hierarchy_name(node.name, this.level);
             }
 
             if (!hierarchy_groups.has(hierarchy_name)) {
@@ -154,6 +164,8 @@ hierarchy.Graph = class {
         const hierarchies = name.split(delimiter);
         const len = Math.min(hierarchies.length, level);
         const hierarchy_name = hierarchies.slice(0, len).join(delimiter);
+
+        // console.log("name:", name, ", level:", level, " => hierarchy_name:", hierarchy_name);
 
         return hierarchy_name;
     }
