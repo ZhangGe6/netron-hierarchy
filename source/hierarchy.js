@@ -108,7 +108,6 @@ hierarchy.Graph = class {
         for (const name of this.stack_node_patterns) {
             stack_0_nodes.push(name.replace("{i}", "0"));
         }
-        // console.log(stack_0_nodes)
 
         var hierarchy_groups = new Map();
         for (const node of this.graph.nodes) {
@@ -151,8 +150,7 @@ hierarchy.Graph = class {
             use_num_map.set(name, use_num_map.get(name) + 1);
         }
 
-        // // console.log(use_num_map)
-        // group_nodes_with_same_hierarchy
+        // group nodes with same hierarchy
         for (let [hierarchy_name, group_nodes] of hierarchy_groups) {
             this.nodes.push(new hierarchy.Node(hierarchy_name, group_nodes, use_num_map));
         }
@@ -186,17 +184,13 @@ hierarchy.Graph = class {
 hierarchy.Node = class {
 
     constructor(name, nodes, use_num_map) {
-        // squeeeze into a big node
+        // squeeeze into a `hierarchy` node
         this.name = name;
         this.inputs = [];
         this.outputs = [];
         this.type = null;
         this.size = nodes.length;
 
-        // for (const node of nodes) {
-        //     this.inputs = this.inputs.concat(node.inputs);
-        //     this.outputs = this.outputs.concat(node.outputs);
-        // }
         this.inputs = this.get_group_inputs(nodes);
         this.outputs = this.get_group_outputs(nodes, use_num_map);
         if (nodes.length == 1) {
@@ -213,9 +207,6 @@ hierarchy.Node = class {
                 // // console.log(input)
                 for (const value of input.value) {
                     var name = value.name;
-                    if (node.name == "/pooler/activation/Tanh") {
-                        // console.log(use_num_map.get(name));
-                    }
                     use_num_map.set(name, use_num_map.get(name) - 1);
                 }
             }
@@ -231,8 +222,6 @@ hierarchy.Node = class {
                 }
             }
         }
-        // console.log(nodes);
-        // console.log(group_outputs)
         return group_outputs;
     }
 
@@ -248,13 +237,12 @@ hierarchy.Node = class {
                 }
             }
         }
-        // // console.log(outputs);
+
         for (const node of nodes) {
             for (const input of node.inputs) {
-                // // console.log(input.name, outputs.includes(input.name));
                 var is_group_input = false;
                 for (const value of input.value) {
-                    // mark it as group_input if there are value that attach to external world
+                    // mark it as group_input if there are value that attach to the "external" world
                     if (!(outputs.includes(value.name))) {
                         is_group_input = true;
                         break;
@@ -267,7 +255,6 @@ hierarchy.Node = class {
 
             }
         }
-        // // console.log(group_inputs)
 
         return group_inputs;
     }
@@ -277,7 +264,7 @@ hierarchy.Node = class {
 hierarchy.NodeType = class {
 
     constructor(nodes, name) {
-        this.name = name; // TODO: change to more readable one
+        this.name = name;
     }
 }
 
