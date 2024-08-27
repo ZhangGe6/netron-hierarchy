@@ -2073,47 +2073,56 @@ view.Node = class extends grapher.Node {
             item.separator = ' = ';
             return item;
         };
-        if (Array.isArray(node.inputs)) {
-            for (const argument of node.inputs) {
-                const type = argument.type;
-                if (type === 'graph' || type === 'object' || type === 'object[]' || type === 'function' || type === 'function[]') {
-                    objects.push(argument);
-                } else if (options.weights && argument.visible !== false && Array.isArray(argument.value) && argument.value.length === 1 && argument.value[0].initializer) {
-                    const item = this.context.createArgument(argument);
-                    if (node instanceof hierarchy.Node) {
-                        hiddenTensors = true;
-                        continue;
+        if (node.type instanceof hierarchy.NodeType) {
+            const item1 = list().argument('type: ', 'hierarchy node');
+            list().add(item1);
+            const item2 = list().argument('size: ', node.size);
+            list().add(item2);
+        } else {
+            if (Array.isArray(node.inputs)) {
+                for (const argument of node.inputs) {
+                    const type = argument.type;
+                    if (type === 'graph' || type === 'object' || type === 'object[]' || type === 'function' || type === 'function[]') {
+                        objects.push(argument);
                     }
-                    list().add(item);
-                } else if (options.weights && (argument.visible === false || Array.isArray(argument.value) && argument.value.length > 1) && (!argument.type || argument.type.endsWith('*')) && argument.value.some((value) => value.initializer)) {
-                    hiddenTensors = true;
-                } else if (options.attributes && argument.visible !== false && argument.type && !argument.type.endsWith('*')) {
-                    const item = attribute(argument);
-                    if (node instanceof hierarchy.Node) {
+                    else if (options.weights && argument.visible !== false && Array.isArray(argument.value) && argument.value.length === 1 && argument.value[0].initializer) {
+                        if (node.type instanceof hierarchy.NodeType) {
+                            showHierarchyInfo = true;
+                            continue;
+                        }
+                        const item = this.context.createArgument(argument);
+                        list().add(item);
+                    } else if (options.weights && (argument.visible === false || Array.isArray(argument.value) && argument.value.length > 1) && (!argument.type || argument.type.endsWith('*')) && argument.value.some((value) => value.initializer)) {
                         hiddenTensors = true;
-                        continue;
+                    } else if (options.attributes && argument.visible !== false && argument.type && !argument.type.endsWith('*')) {
+                        if (node.type instanceof hierarchy.NodeType) {
+                            showHierarchyInfo = true;
+                            continue;
+                        }
+                        const item = attribute(argument);
+                        list().add(item);
                     }
-                    list().add(item);
                 }
             }
-        }
-        if (Array.isArray(node.attributes)) {
-            const attributes = node.attributes.slice();
-            attributes.sort((a, b) => a.name.toUpperCase().localeCompare(b.name.toUpperCase()));
-            for (const argument of attributes) {
-                const type = argument.type;
-                if (type === 'graph' || type === 'object' || type === 'object[]' || type === 'function' || type === 'function[]') {
-                    objects.push(argument);
-                } else if (options.attributes && argument.visible !== false) {
-                    const item = attribute(argument);
-                    list().add(item);
+            if (Array.isArray(node.attributes)) {
+                const attributes = node.attributes.slice();
+                attributes.sort((a, b) => a.name.toUpperCase().localeCompare(b.name.toUpperCase()));
+                for (const argument of attributes) {
+                    const type = argument.type;
+                    if (type === 'graph' || type === 'object' || type === 'object[]' || type === 'function' || type === 'function[]') {
+                        objects.push(argument);
+                    } else if (options.attributes && argument.visible !== false) {
+                        const item = attribute(argument);
+                        list().add(item);
+                    }
                 }
             }
+            if (hiddenTensors) {
+                const item = list().argument('\u3008\u2026\u3009', '');
+                list().add(item);
+            }
         }
-        if (hiddenTensors) {
-            const item = list().argument('\u3008\u2026\u3009', '');
-            list().add(item);
-        }
+
         for (const argument of objects) {
             const type = argument.type;
             let content = null;

@@ -191,6 +191,7 @@ hierarchy.Node = class {
         this.inputs = [];
         this.outputs = [];
         this.type = null;
+        this.size = nodes.length;
 
         // for (const node of nodes) {
         //     this.inputs = this.inputs.concat(node.inputs);
