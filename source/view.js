@@ -2033,6 +2033,9 @@ view.Node = class extends grapher.Node {
             throw error;
         }
         let content = options.names && (node.name || node.identifier) ? (node.name || node.identifier) : type.name.split('.').pop();
+        if (type instanceof hierarchy.NodeType) {
+            content = type.name;
+        }
         const tooltip = options.names && (node.name || node.identifier) ? type.name : (node.name || node.identifier);
         if (content.length > 24) {
             content = `${content.substring(0, 12)}\u2026${content.substring(content.length - 12, content.length)}`;
@@ -5959,7 +5962,6 @@ view.ModelFactoryService = class {
                     // console.log(hierarchy);
                     const model = new hierarchy.Model(flat_model);
                     // console.log(model);
-                    model.set_level(1);
                     model.build();
                     return model;
                 } catch (error) {
